@@ -1,333 +1,363 @@
-Cold Outreacher
+# Cold Outreacher
 
-A lightweight Tampermonkey userscript for automating personalized bulk email outreach directly through Gmail using Excel or CSV data.
+**Send personalized Gmail outreach from a spreadsheet. No backend. No mail server. Just Gmail + Tampermonkey.**
 
-Cold Outreacher reads recipient information from a spreadsheet and automatically handles Gmail Compose, recipient entry, subject, message insertion, and sending — without requiring a separate email server or desktop application.
+Cold Outreacher is a Tampermonkey userscript that turns Gmail into a lightweight spreadsheet-powered outreach tool.
 
-Features
-Send personalized emails directly through Gmail
-Import recipients from Excel (.xlsx, .xls) or CSV (.csv)
-Automatically detect Gmail's Compose window
-Automatically enter:
-Recipient email
-Subject
-Email body
-Preserve your existing Gmail signature
-Configurable delay between emails
-Start / Stop / Reset controls
-Real-time sending progress
-Automatic error detection
-Automatically recreates the interface if Gmail's SPA navigation removes it
-Runs entirely inside the browser
-No external backend required
-Spreadsheet Format
+Load an Excel or CSV file, set your delay, and let Cold Outreacher handle the repetitive parts of composing and sending your emails.
 
-Your spreadsheet should contain the following columns:
+## Install
 
-Column	Required	Description
-Email ID	Yes	Recipient's email address
-Subject	Yes	Email subject
-Body	Yes	Email message
+1. Install [Tampermonkey](https://www.tampermonkey.net/) in your browser.
+2. Open `cold-outreacher.user.js`.
+3. Copy the entire script into a new Tampermonkey userscript.
+4. Save it.
+5. Open [Gmail](https://mail.google.com/).
+6. Look for the **Cold Outreacher** panel in the bottom-right corner.
 
-Example:
+That's it.
 
-Email ID	Subject	Body
-john@example.com	Partnership Opportunity	Hello John, I wanted to reach out regarding...
-jane@example.com	Collaboration Proposal	Hello Jane, I came across your work and...
+## What it does
 
-The script also recognizes these email column names:
+Give it a spreadsheet like this:
 
-Email ID
-Email
-EmailID
-E-mail
-E-mail ID
+| Email ID                                    | Subject            | Body                                 |
+| ------------------------------------------- | ------------------ | ------------------------------------ |
+| [john@example.com](mailto:john@example.com) | Quick introduction | Hey John, I wanted to reach out...   |
+| [jane@example.com](mailto:jane@example.com) | Collaboration      | Hey Jane, I came across your work... |
 
-And these body column names:
+Cold Outreacher takes care of the rest:
 
-Body
-Message
-Email Body
+1. Opens Gmail Compose
+2. Enters the recipient
+3. Enters the subject
+4. Inserts the message
+5. Preserves your Gmail signature
+6. Sends the email
+7. Waits for your configured delay
+8. Moves to the next row
 
-Rows without an email address are ignored.
+## The idea
 
-Installation
-1. Install Tampermonkey
+### Before
 
-Install the Tampermonkey browser extension for your browser.
+> Open Gmail
+> Click Compose
+> Copy email address
+> Paste email address
+> Enter subject
+> Copy message
+> Paste message
+> Click Send
+> Wait
+> Repeat 100 times
 
-2. Create the userscript
+### After
 
-Open the Tampermonkey dashboard and create a new script.
+> Upload your spreadsheet.
+>
+> Set the delay.
+>
+> Click **START**.
+>
+> Cold Outreacher handles the repetitive work.
 
-Delete the default code and paste the contents of:
+## Spreadsheet format
 
-cold-outreacher.user.js
+Your spreadsheet needs three basic columns:
 
-Save the script.
-
-3. Open Gmail
-
-Open:
-
-https://mail.google.com/
-
-After the userscript loads, the Cold Outreacher panel will appear in the bottom-right corner.
-
-Usage
-Step 1 — Prepare your spreadsheet
-
-Create an Excel or CSV file containing:
-
+```text
 Email ID | Subject | Body
+```
 
 For example:
 
-john@example.com | Introduction | Hello John,
+```text
+john@example.com | Partnership Opportunity | Hi John,
 
-I wanted to get in touch regarding a potential collaboration.
+I wanted to reach out regarding a potential collaboration.
 
 Best,
 Your Name
-Step 2 — Load the spreadsheet
+```
 
-Open Gmail and click the Cold Outreacher panel.
+### Supported column names
 
-Select your .xlsx, .xls, or .csv file.
+**Email**
 
-The script will display the number of emails loaded.
+* `Email ID`
+* `Email`
+* `EmailID`
+* `E-mail`
+* `E-mail ID`
 
-Step 3 — Configure the delay
+**Message**
 
-Set the delay between emails.
+* `Body`
+* `Message`
+* `Email Body`
 
-The default delay is:
+Rows without an email address are automatically skipped.
 
+## Features
+
+* Excel `.xlsx` support
+* Excel `.xls` support
+* CSV support
+* Personalized subject and body for every recipient
+* Automatic Gmail Compose detection
+* Automatic recipient entry
+* Automatic sending
+* Configurable delay between emails
+* Start / Stop / Reset controls
+* Live progress tracking
+* Gmail signature preservation
+* Error detection
+* Gmail SPA protection
+* No external backend
+
+## The panel
+
+Cold Outreacher keeps things simple:
+
+```text
+┌──────────────────────────────┐
+│ Cold Outreacher           −  │
+├──────────────────────────────┤
+│                              │
+│ Select Excel / CSV            │
+│                              │
+│ 25 emails loaded.             │
+│                              │
+│ Delay between emails: 5 sec  │
+│                              │
+│ [ START ] [ STOP ] [ RESET ] │
+│                              │
+│ Excel columns:               │
+│ Email ID | Subject | Body    │
+└──────────────────────────────┘
+```
+
+The panel starts minimized so it stays out of the way while you're using Gmail.
+
+## Why Tampermonkey?
+
+Cold Outreacher runs directly inside Gmail.
+
+There is:
+
+* No server to deploy
+* No database
+* No API key
+* No SMTP configuration
+* No separate desktop application
+* No backend to keep running
+
+Your browser does the work.
+
+## How it works
+
+```text
+             Excel / CSV
+                  │
+                  ▼
+             SheetJS
+                  │
+                  ▼
+          Cold Outreacher
+                  │
+        ┌─────────┼─────────┐
+        ▼         ▼         ▼
+    Recipient   Subject    Body
+        │         │         │
+        └─────────┼─────────┘
+                  ▼
+            Gmail Compose
+                  │
+                  ▼
+                Send
+                  │
+                  ▼
+             Next Email
+```
+
+The spreadsheet is read locally in your browser using [SheetJS](https://sheetjs.com/).
+
+## Delay
+
+You can configure the delay between emails from the Cold Outreacher panel.
+
+Default:
+
+```text
 5 seconds
+```
 
-The minimum delay enforced by the script is:
+Minimum:
 
+```text
 2 seconds
-Step 4 — Start
+```
 
-Click:
+The delay exists so the automation doesn't immediately hammer Gmail with consecutive UI actions.
 
-START
+**Important:** The delay does not bypass Gmail's sending limits or anti-spam systems.
 
-Cold Outreacher will process the spreadsheet sequentially.
+## Stop and resume
 
-For each row it will:
+Click **STOP** at any point to stop the sending loop.
 
-Open Gmail Compose
-Enter the recipient
-Confirm the recipient
-Enter the subject
-Insert the email body
-Preserve the existing Gmail signature
-Click Send
-Wait for the configured delay
-Continue to the next recipient
-Controls
-START
+Your current position is retained.
 
-Begins sending from the current position.
+Click **START** again to continue from where it stopped.
 
-STOP
+Click **RESET** if you want to start the spreadsheet from the beginning.
 
-Immediately stops the sending loop.
+## Gmail signature
 
-Your current progress is retained, allowing you to continue later.
+Already have a Gmail signature configured?
 
-RESET
+Cold Outreacher preserves it.
 
-Resets the current position to the beginning of the loaded spreadsheet.
+Your spreadsheet controls the message content, while the existing Gmail signature remains at the bottom of the email.
 
-Email Signature
+For example:
 
-Cold Outreacher is designed to preserve an existing Gmail signature.
+```text
+Hi John,
 
-When inserting the message, the script:
+I wanted to reach out regarding a potential collaboration.
 
-Removes the previous compose body
-Inserts the spreadsheet message
-Keeps the existing Gmail signature
-Places a single line break between the message and signature
+Best,
+Your Name
+```
 
-It does not use innerHTML or document.execCommand() for message insertion.
+The existing Gmail signature is retained automatically.
 
-How It Works
+## Error handling
 
-Cold Outreacher operates as a browser userscript on the Gmail page.
+Cold Outreacher stops if Gmail doesn't behave as expected.
 
-Excel / CSV
-     │
-     ▼
-SheetJS
-     │
-     ▼
-Cold Outreacher
-     │
-     ├── Recipient
-     ├── Subject
-     └── Body
-     │
-     ▼
-Gmail Compose
-     │
-     ▼
-Send
-     │
-     ▼
-Next Recipient
+For example:
 
-The spreadsheet is processed locally in the browser using the SheetJS library.
-
-No spreadsheet data is uploaded to a Cold Outreacher server.
-
-Dependencies
-
-Cold Outreacher uses:
-
-Tampermonkey
-SheetJS
-
-SheetJS is loaded through its CDN:
-
-https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js
-Browser Compatibility
-
-Cold Outreacher is intended for Chromium-based browsers and Gmail's web interface.
-
-Recommended:
-
-Google Chrome
-Microsoft Edge
-Brave
-Other Chromium-based browsers supporting Tampermonkey
-
-Gmail's interface can change over time. Because the script interacts with Gmail's web UI, future Gmail updates may require selector or automation changes.
-
-Limitations
-
-Cold Outreacher relies on Gmail's current web interface.
-
-Potential issues can occur if:
-
-Gmail changes its Compose interface
-Gmail changes recipient or Send button selectors
-Gmail introduces additional anti-automation behavior
-The account reaches Gmail sending limits
-Gmail temporarily restricts sending activity
-The browser extension is disabled
-The Gmail tab is closed or suspended
-
-The script stops when it encounters an error rather than blindly continuing.
-
-Sending Limits
-
-Cold Outreacher does not increase or bypass Gmail's sending limits.
-
-Your Gmail account's existing sending limits, restrictions, spam policies, and account protections still apply.
-
-Use the tool responsibly and only send messages to recipients where you have an appropriate basis for contacting them.
-
-Privacy
-
-Cold Outreacher is a client-side userscript.
-
-The spreadsheet is processed directly in your browser. The project itself does not provide a backend server for collecting recipient data or email content.
-
-However, Gmail and the browser environment remain subject to their own privacy policies and security mechanisms.
-
-Project Structure
-
-The primary project file is:
-
-cold-outreacher/
-│
-├── cold-outreacher.user.js
-└── README.md
-Configuration
-
-The default delay is configured in the script:
-
-delay.value = '5';
-
-The minimum delay is:
-
-delay.min = '2';
-
-The script also enforces the minimum delay programmatically:
-
-Math.max(
-    2000,
-    Number(
-        document.getElementById('co-delay').value
-    ) * 1000
-)
-Error Handling
-
-If an operation fails, Cold Outreacher stops the sending process and reports:
-
-The row being processed
-The email address
-The error encountered
-
-Examples of detected errors include:
-
+```text
 Recipient field not found.
 Subject field not found.
 Email body field not found.
 Gmail Compose button not found.
 Gmail Send button not found.
+```
 
-This prevents the script from continuing through the spreadsheet when Gmail is no longer behaving as expected.
+Instead of silently continuing and potentially sending incorrect emails, the script stops and reports the problem.
 
-Gmail SPA Protection
+## Gmail SPA protection
 
-Gmail is a single-page application, meaning navigation within Gmail does not necessarily reload the page.
+Gmail is a single-page application.
 
-Cold Outreacher periodically checks whether its interface still exists:
+That means navigating around Gmail doesn't necessarily reload the page.
 
-setInterval(function () {
-    if (!document.getElementById('cold-outreacher')) {
-        createPanel();
-    }
-}, 1000);
+Cold Outreacher periodically checks whether its interface still exists and recreates it if Gmail removes it.
 
-If Gmail removes the panel during navigation, it is automatically recreated.
+So you don't have to keep reopening the userscript panel while navigating Gmail.
 
-Responsible Use
+## Privacy
 
-This project is intended for legitimate email outreach and workflow automation.
+Cold Outreacher does not require a Cold Outreacher server.
 
-Do not use it for:
+The spreadsheet is processed inside your browser.
 
-Spam
-Unsolicited mass messaging
-Harassment
-Deceptive communications
-Circumventing Gmail restrictions
-Sending content that violates applicable laws or platform policies
+There is no Cold Outreacher database collecting:
 
-You are responsible for the emails sent through your Gmail account.
+* Email addresses
+* Subjects
+* Message contents
+* Spreadsheet files
 
-Contributing
+The only external library loaded by the script is SheetJS for reading spreadsheet files.
 
-Pull requests and improvements are welcome.
+## Important
 
-If you find that Gmail has changed its interface and the script no longer works:
+Cold Outreacher automates the Gmail interface.
 
-Open an issue
-Describe what stopped working
-Include relevant browser/Gmail information
-Include console errors where possible
-Avoid posting private recipient information
+It **does not**:
 
-Disclaimer
+* Increase Gmail's sending limits
+* Bypass Gmail restrictions
+* Bypass spam detection
+* Provide an official Gmail API
+* Guarantee inbox placement
+* Guarantee that every email will be delivered
 
-Cold Outreacher is an independent browser automation project.
+Gmail's own limits and policies still apply.
 
-It is not affiliated with, endorsed by, or sponsored by Google or Gmail.
+Use it responsibly and only contact people where you have an appropriate reason and permission to do so.
+
+## Limitations
+
+Because Cold Outreacher interacts with Gmail's web interface, changes to Gmail can break parts of the automation.
+
+For example, Google may change:
+
+* Compose selectors
+* Recipient fields
+* Send buttons
+* Gmail's DOM structure
+* Editor behavior
+
+If Gmail changes its interface, the userscript may need to be updated.
+
+## Project structure
+
+```text
+cold-outreacher/
+│
+├── cold-outreacher.user.js
+├── README.md
+└── LICENSE
+```
+
+## Dependencies
+
+* [Tampermonkey](https://www.tampermonkey.net/)
+* [SheetJS](https://sheetjs.com/)
+
+SheetJS is loaded through its CDN:
+
+```text
+https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js
+```
+
+## Contributing
+
+Found a bug?
+
+Have an improvement?
+
+Open an issue or submit a pull request.
+
+When reporting a Gmail compatibility issue, include:
+
+1. Browser
+2. Gmail behavior that failed
+3. Console error, if available
+4. Steps to reproduce
+
+Please don't include private email addresses or message contents in issues.
+
+## License
+
+MIT License.
+
+See [`LICENSE`](LICENSE) for the full license text.
+
+## Disclaimer
+
+Cold Outreacher is an independent open-source project.
+
+It is **not affiliated with, endorsed by, or sponsored by Google or Gmail**.
 
 Gmail and Google are trademarks of Google LLC.
+
+---
+
+**Cold Outreacher — Gmail outreach, without the repetitive clicking.**
