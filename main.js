@@ -1,10 +1,9 @@
 // ==UserScript==
 // @name         Cold Outreacher
 // @namespace    https://github.com/akanpc-code/Cold-Outreacher
-// @version      18.0
-// @description  Gmail bulk outreach tool using Excel or CSV data
+// @version      20.0
+// @description  Gmail bulk outreach tool using CSV data
 // @match        https://mail.google.com/*
-// @require      https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js
 // @grant        none
 // @run-at       document-end
 // ==/UserScript==
@@ -13,11 +12,14 @@
 
     'use strict';
 
+
+    /* =========================================================
+       STATE
+    ========================================================= */
+
     let rows = [];
     let current = 0;
     let running = false;
-
-    // START MINIMIZED
     let minimized = true;
 
 
@@ -26,237 +28,760 @@
     ========================================================= */
 
     function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+
+        return new Promise(function (resolve) {
+
+            setTimeout(resolve, ms);
+
+        });
+
     }
 
 
     function status(text) {
 
-        const el = document.getElementById('co-status');
+        const element =
+            document.getElementById('co-status');
 
-        if (el) {
-            el.textContent = text;
+        if (element) {
+
+            element.textContent = text;
+
         }
+
     }
 
 
     /* =========================================================
-       MINIMIZE / MAXIMIZE
+       REMOVE OLD UI
     ========================================================= */
 
-    function toggleMinimize() {
+    function removeOldUI() {
 
-        const box =
-            document.getElementById('cold-outreacher');
+        const ids = [
 
-        const content =
-            document.getElementById('co-panel-content');
+            'cold-outreacher',
+            'co-toggle',
+            'co-styles',
 
-        const button =
-            document.getElementById('co-minimize');
+            // Older versions
+            'sugoi-mailer',
+            'sd-toggle',
+            'sd-mailer-wrapper',
+            'sd-mailer-styles'
+
+        ];
 
 
-        if (!box || !content || !button) {
+        ids.forEach(function (id) {
+
+            const element =
+                document.getElementById(id);
+
+            if (element) {
+
+                element.remove();
+
+            }
+
+        });
+
+    }
+
+
+    /* =========================================================
+       STYLES
+    ========================================================= */
+
+    function addStyles() {
+
+        if (
+            document.getElementById('co-styles')
+        ) {
+
             return;
+
         }
 
 
-        minimized = !minimized;
+        const style =
+            document.createElement('style');
+
+
+        style.id =
+            'co-styles';
+
+
+        style.textContent = `
+
+            /* =================================================
+               MAIN PANEL
+            ================================================= */
+
+            #cold-outreacher {
+
+                position: fixed;
+
+                right: 20px;
+
+                bottom: 60px;
+
+                width: 370px;
+
+                box-sizing: border-box;
+
+                z-index: 2147483647;
+
+                padding: 18px;
+
+                background: #ffffff;
+
+                color: #25202f;
+
+                border: 1px solid #e5dff0;
+
+                border-radius: 12px;
+
+                box-shadow:
+                    0 8px 30px
+                    rgba(72,45,105,.12);
+
+                font-family:
+                    Arial,
+                    sans-serif;
+
+                font-size: 14px;
+
+                transform:
+                    translateX(0);
+
+                transition:
+                    transform
+                    .38s
+                    cubic-bezier(.4,0,.2,1);
+
+            }
+
+
+            /* =================================================
+               MINIMIZED PANEL
+            ================================================= */
+
+            #cold-outreacher.co-minimized {
+
+                transform:
+                    translateX(390px);
+
+            }
+
+
+            /* =================================================
+               TOGGLE
+            ================================================= */
+
+            #co-toggle {
+
+                position: fixed;
+
+                right: -1px;
+
+                bottom: 60px;
+
+                width: 42px;
+
+                height: 42px;
+
+                padding: 0;
+
+                margin: 0;
+
+                border:
+                    1px solid #e5dff0;
+
+                border-radius: 50%;
+
+                background: #ffffff;
+
+                color: #7652a8;
+
+                box-shadow:
+                    0 3px 12px
+                    rgba(72,45,105,.12);
+
+                cursor: pointer;
+
+                z-index: 2147483648;
+
+                display: flex;
+
+                align-items: center;
+
+                justify-content: center;
+
+                font-family:
+                    Arial,
+                    sans-serif;
+
+                font-size: 28px;
+
+                font-weight: 300;
+
+                line-height: 42px;
+
+                box-sizing: border-box;
+
+                transition:
+
+                    right
+                    .38s
+                    cubic-bezier(.4,0,.2,1),
+
+                    transform
+                    .18s
+                    ease,
+
+                    box-shadow
+                    .18s
+                    ease,
+
+                    color
+                    .18s
+                    ease;
+
+            }
+
+
+            /* =================================================
+               TOGGLE WHEN MINIMIZED
+            ================================================= */
+
+            #co-toggle.co-minimized {
+
+                right: 10px;
+
+            }
+
+
+            /* =================================================
+               TOGGLE HOVER
+            ================================================= */
+
+            #co-toggle:hover {
+
+                color: #654394;
+
+                transform:
+                    scale(1.05);
+
+                box-shadow:
+                    0 5px 16px
+                    rgba(72,45,105,.18);
+
+            }
+
+
+            /* =================================================
+               TITLE
+            ================================================= */
+
+            #co-title {
+
+                font-size: 20px;
+
+                font-weight: 600;
+
+                line-height: 24px;
+
+                margin-bottom: 15px;
+
+                color: #33263f;
+
+                letter-spacing: -.2px;
+
+            }
+
+
+            /* =================================================
+               FILE INPUT
+            ================================================= */
+
+            #co-file {
+
+                width: 100%;
+
+                box-sizing: border-box;
+
+                color: #40364b;
+
+                font-family:
+                    Arial,
+                    sans-serif;
+
+                font-size: 13px;
+
+            }
+
+
+            /* =================================================
+               STATUS
+            ================================================= */
+
+            #co-status {
+
+                margin-top: 12px;
+
+                padding: 10px;
+
+                background: #f7f4fb;
+
+                color: #5d5268;
+
+                border:
+                    1px solid #eee8f5;
+
+                border-radius: 8px;
+
+                white-space: pre-line;
+
+                line-height: 1.5;
+
+                box-sizing: border-box;
+
+            }
+
+
+            /* =================================================
+               DELAY
+            ================================================= */
+
+            #co-delay-row {
+
+                margin-top: 12px;
+
+                display: flex;
+
+                align-items: center;
+
+                gap: 4px;
+
+                color: #40364b;
+
+            }
+
+
+            #co-delay {
+
+                width: 55px;
+
+                padding: 5px;
+
+                box-sizing: border-box;
+
+                border:
+                    1px solid #ddd3e8;
+
+                border-radius: 6px;
+
+                background: #ffffff;
+
+                color: #33283d;
+
+                outline: none;
+
+            }
+
+
+            #co-delay:focus {
+
+                border-color: #9a7bc1;
+
+                box-shadow:
+                    0 0 0 2px
+                    rgba(118,82,168,.10);
+
+            }
+
+
+            /* =================================================
+               BUTTON CONTAINER
+            ================================================= */
+
+            #co-buttons {
+
+                margin-top: 15px;
+
+                display: flex;
+
+                gap: 7px;
+
+            }
+
+
+            /* =================================================
+               BUTTONS
+            ================================================= */
+
+            #co-buttons button {
+
+                padding:
+                    9px 18px;
+
+                cursor: pointer;
+
+                font-family:
+                    Arial,
+                    sans-serif;
+
+                font-size: 13px;
+
+                border-radius: 7px;
+
+                outline: none;
+
+                transition:
+
+                    background
+                    .15s
+                    ease,
+
+                    border-color
+                    .15s
+                    ease,
+
+                    transform
+                    .15s
+                    ease;
+
+            }
+
+
+            /* START */
+
+            #co-start {
+
+                font-weight: 600;
+
+                color: #ffffff;
+
+                background: #7652a8;
+
+                border:
+                    1px solid #7652a8;
+
+            }
+
+
+            #co-start:hover {
+
+                background: #68479a;
+
+                transform:
+                    translateY(-1px);
+
+            }
+
+
+            /* STOP */
+
+            #co-stop {
+
+                font-weight: 600;
+
+                color: #5f4b72;
+
+                background: #ffffff;
+
+                border:
+                    1px solid #ddd3e8;
+
+            }
+
+
+            #co-stop:hover {
+
+                background: #f8f5fb;
+
+                border-color: #cfc1df;
+
+            }
+
+
+            /* RESET */
+
+            #co-reset {
+
+                color: #5f4b72;
+
+                background: #faf9fc;
+
+                border:
+                    1px solid #e5dff0;
+
+            }
+
+
+            #co-reset:hover {
+
+                background: #f4eff9;
+
+                border-color: #d8cde5;
+
+            }
+
+
+            /* =================================================
+               INFO
+            ================================================= */
+
+            #co-info {
+
+                margin-top: 12px;
+
+                color: #8a7c96;
+
+                font-size: 11px;
+
+            }
+
+
+            /* =================================================
+               MOBILE
+            ================================================= */
+
+            @media (max-width: 600px) {
+
+                #cold-outreacher {
+
+                    width:
+                        calc(100vw - 20px);
+
+                    right: 10px;
+
+                }
+
+
+                #cold-outreacher.co-minimized {
+
+                    transform:
+                        translateX(100vw);
+
+                }
+
+
+                #co-toggle {
+
+                    right: -1px;
+
+                }
+
+
+                #co-toggle.co-minimized {
+
+                    right: 10px;
+
+                }
+
+            }
+
+        `;
+
+
+        document.head.appendChild(style);
+
+    }
+
+
+    /* =========================================================
+       TOGGLE PANEL
+    ========================================================= */
+
+    function toggleMailer() {
+
+        const panel =
+            document.getElementById(
+                'cold-outreacher'
+            );
+
+
+        const toggle =
+            document.getElementById(
+                'co-toggle'
+            );
+
+
+        if (!panel || !toggle) {
+
+            return;
+
+        }
+
+
+        minimized =
+            !minimized;
 
 
         if (minimized) {
 
-            /* ================================================
-               MINIMIZED
-            ================================================= */
+            panel.classList.add(
+                'co-minimized'
+            );
 
-            box.style.width = '250px';
-            box.style.padding = '10px 12px';
 
-            content.style.display = 'none';
+            toggle.classList.add(
+                'co-minimized'
+            );
 
-            button.textContent = '-';
 
-            button.title = 'Expand';
+            toggle.textContent =
+                '‹';
+
+
+            toggle.title =
+                'Open Cold Outreacher';
 
 
         } else {
 
-            /* ================================================
-               MAXIMIZED
-            ================================================= */
+            panel.classList.remove(
+                'co-minimized'
+            );
 
-            box.style.width = '370px';
-            box.style.padding = '18px';
 
-            content.style.display = 'block';
+            toggle.classList.remove(
+                'co-minimized'
+            );
 
-            button.textContent = '-';
 
-            button.title = 'Minimize';
+            toggle.textContent =
+                '›';
+
+
+            toggle.title =
+                'Minimize Cold Outreacher';
+
         }
+
     }
 
 
     /* =========================================================
-       PANEL
+       CREATE TOGGLE
+    ========================================================= */
+
+    function createToggle() {
+
+        if (
+            document.getElementById(
+                'co-toggle'
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        const toggle =
+            document.createElement('button');
+
+
+        toggle.id =
+            'co-toggle';
+
+
+        toggle.classList.add(
+            'co-minimized'
+        );
+
+
+        toggle.textContent =
+            '‹';
+
+
+        toggle.title =
+            'Open Cold Outreacher';
+
+
+        toggle.type =
+            'button';
+
+
+        toggle.setAttribute(
+            'aria-label',
+            'Open Cold Outreacher'
+        );
+
+
+        toggle.addEventListener(
+            'click',
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                toggleMailer();
+
+            }
+        );
+
+
+        document.body.appendChild(
+            toggle
+        );
+
+    }
+
+
+    /* =========================================================
+       CREATE PANEL
     ========================================================= */
 
     function createPanel() {
 
         if (
-            document.getElementById('cold-outreacher')
+            document.getElementById(
+                'cold-outreacher'
+            )
         ) {
+
             return;
+
         }
 
 
-        const box =
+        const panel =
             document.createElement('div');
 
 
-        box.id =
+        panel.id =
             'cold-outreacher';
 
 
-        box.style.cssText = `
-            position:fixed;
-            right:20px;
-            bottom:20px;
-            width:250px;
-            padding:10px 12px;
-            background:#202124;
-            color:#fff;
-            border:2px solid #34a853;
-            border-radius:10px;
-            z-index:2147483647;
-            font-family:Arial,sans-serif;
-            font-size:14px;
-            box-shadow:0 8px 30px rgba(0,0,0,.55);
-            box-sizing:border-box;
-        `;
+        panel.classList.add(
+            'co-minimized'
+        );
 
 
         /* =====================================================
-           HEADER
+           TITLE
         ===================================================== */
-
-        const header =
-            document.createElement('div');
-
-
-        header.style.cssText = `
-            width:100%;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            gap:8px;
-            box-sizing:border-box;
-            margin:0;
-        `;
-
 
         const title =
             document.createElement('div');
+
+
+        title.id =
+            'co-title';
 
 
         title.textContent =
             'Cold Outreacher';
 
 
-        title.style.cssText = `
-            font-size:20px;
-            font-weight:bold;
-            line-height:24px;
-            white-space:nowrap;
-            overflow:hidden;
-            text-overflow:ellipsis;
-            flex:1;
-            min-width:0;
-        `;
-
-
-        header.appendChild(title);
-
-
-        /* =====================================================
-           MINUS BUTTON
-        ===================================================== */
-
-        const minimize =
-            document.createElement('button');
-
-
-        minimize.id =
-            'co-minimize';
-
-
-        minimize.textContent =
-            '-';
-
-
-        minimize.title =
-            'Expand';
-
-
-        minimize.style.cssText = `
-            width:28px;
-            height:28px;
-            min-width:28px;
-            max-width:28px;
-            padding:0;
-            margin:0;
-            cursor:pointer;
-            font-size:20px;
-            line-height:24px;
-            font-weight:bold;
-            text-align:center;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            border-radius:5px;
-            border:1px solid #aaa;
-            background:#f1f3f4;
-            color:#202124;
-            box-sizing:border-box;
-        `;
-
-
-        minimize.addEventListener(
-            'click',
-            toggleMinimize
+        panel.appendChild(
+            title
         );
-
-
-        header.appendChild(
-            minimize
-        );
-
-
-        box.appendChild(
-            header
-        );
-
-
-        /* =====================================================
-           PANEL CONTENT
-        ===================================================== */
-
-        const content =
-            document.createElement('div');
-
-
-        content.id =
-            'co-panel-content';
-
-
-        /*
-         * Since the panel starts minimized,
-         * hide content immediately.
-         */
-
-        content.style.display =
-            'none';
 
 
         /* =====================================================
@@ -275,15 +800,15 @@
             'file';
 
 
+        /*
+         * CSV ONLY
+         */
+
         file.accept =
-            '.xlsx,.xls,.csv';
+            '.csv,text/csv';
 
 
-        file.style.width =
-            '100%';
-
-
-        content.appendChild(
+        panel.appendChild(
             file
         );
 
@@ -301,20 +826,10 @@
 
 
         stat.textContent =
-            'Ready. Select your Excel file.';
+            'Ready. Select your CSV file.';
 
 
-        stat.style.cssText = `
-            margin-top:12px;
-            padding:10px;
-            background:#303134;
-            border-radius:6px;
-            white-space:pre-line;
-            line-height:1.5;
-        `;
-
-
-        content.appendChild(
+        panel.appendChild(
             stat
         );
 
@@ -327,8 +842,8 @@
             document.createElement('div');
 
 
-        delayRow.style.marginTop =
-            '12px';
+        delayRow.id =
+            'co-delay-row';
 
 
         const delayLabel =
@@ -336,7 +851,7 @@
 
 
         delayLabel.textContent =
-            'Delay between emails: ';
+            'Delay between emails:';
 
 
         delayRow.appendChild(
@@ -356,19 +871,17 @@
             'number';
 
 
+        /*
+         * Default delay:
+         * 15 seconds
+         */
+
         delay.value =
-            '5';
+            '15';
 
 
         delay.min =
             '2';
-
-
-        delay.style.cssText = `
-            width:55px;
-            padding:5px;
-            box-sizing:border-box;
-        `;
 
 
         delayRow.appendChild(
@@ -381,7 +894,7 @@
 
 
         seconds.textContent =
-            ' seconds';
+            'seconds';
 
 
         delayRow.appendChild(
@@ -389,7 +902,7 @@
         );
 
 
-        content.appendChild(
+        panel.appendChild(
             delayRow
         );
 
@@ -402,11 +915,8 @@
             document.createElement('div');
 
 
-        buttons.style.cssText = `
-            margin-top:15px;
-            display:flex;
-            gap:7px;
-        `;
+        buttons.id =
+            'co-buttons';
 
 
         const start =
@@ -417,15 +927,12 @@
             'co-start';
 
 
+        start.type =
+            'button';
+
+
         start.textContent =
             'START';
-
-
-        start.style.cssText = `
-            padding:9px 18px;
-            cursor:pointer;
-            font-weight:bold;
-        `;
 
 
         const stop =
@@ -436,15 +943,12 @@
             'co-stop';
 
 
+        stop.type =
+            'button';
+
+
         stop.textContent =
             'STOP';
-
-
-        stop.style.cssText = `
-            padding:9px 18px;
-            cursor:pointer;
-            font-weight:bold;
-        `;
 
 
         const reset =
@@ -455,32 +959,22 @@
             'co-reset';
 
 
+        reset.type =
+            'button';
+
+
         reset.textContent =
             'RESET';
 
 
-        reset.style.cssText = `
-            padding:9px 18px;
-            cursor:pointer;
-        `;
+        buttons.appendChild(start);
+
+        buttons.appendChild(stop);
+
+        buttons.appendChild(reset);
 
 
-        buttons.appendChild(
-            start
-        );
-
-
-        buttons.appendChild(
-            stop
-        );
-
-
-        buttons.appendChild(
-            reset
-        );
-
-
-        content.appendChild(
+        panel.appendChild(
             buttons
         );
 
@@ -493,29 +987,21 @@
             document.createElement('div');
 
 
+        info.id =
+            'co-info';
+
+
         info.textContent =
-            'Excel columns: Email ID | Subject | Body';
+            'CSV columns: Email ID | Subject | Body';
 
 
-        info.style.cssText = `
-            margin-top:12px;
-            color:#aaa;
-            font-size:11px;
-        `;
-
-
-        content.appendChild(
+        panel.appendChild(
             info
         );
 
 
-        box.appendChild(
-            content
-        );
-
-
         document.body.appendChild(
-            box
+            panel
         );
 
 
@@ -525,7 +1011,7 @@
 
         file.addEventListener(
             'change',
-            readExcel
+            readCSV
         );
 
 
@@ -545,158 +1031,498 @@
             'click',
             resetMailer
         );
+
     }
 
 
     /* =========================================================
-       READ EXCEL
+       CSV PARSER
+       ========================================================= */
+
+    function parseCSV(text) {
+
+        const result = [];
+
+        let row = [];
+
+        let field = '';
+
+        let inQuotes = false;
+
+
+        /*
+         * Remove UTF-8 BOM if present.
+         */
+
+        text =
+            String(text || '')
+                .replace(/^\uFEFF/, '');
+
+
+        for (
+            let i = 0;
+            i < text.length;
+            i++
+        ) {
+
+            const char =
+                text[i];
+
+
+            const next =
+                text[i + 1];
+
+
+            /*
+             * QUOTED FIELD
+             */
+
+            if (char === '"') {
+
+                /*
+                 * Escaped quote:
+                 * ""
+                 */
+
+                if (
+                    inQuotes &&
+                    next === '"'
+                ) {
+
+                    field += '"';
+
+                    i++;
+
+                } else {
+
+                    inQuotes =
+                        !inQuotes;
+
+                }
+
+                continue;
+
+            }
+
+
+            /*
+             * COMMA
+             */
+
+            if (
+                char === ',' &&
+                !inQuotes
+            ) {
+
+                row.push(field);
+
+                field = '';
+
+                continue;
+
+            }
+
+
+            /*
+             * NEW LINE
+             *
+             * Newlines inside quoted fields are
+             * preserved as part of the body.
+             */
+
+            if (
+                (
+                    char === '\n' ||
+                    char === '\r'
+                ) &&
+                !inQuotes
+            ) {
+
+                /*
+                 * Handle Windows CRLF.
+                 */
+
+                if (
+                    char === '\r' &&
+                    next === '\n'
+                ) {
+
+                    i++;
+
+                }
+
+
+                row.push(field);
+
+                field = '';
+
+
+                /*
+                 * Ignore completely empty rows.
+                 */
+
+                if (
+                    row.some(
+                        function (value) {
+
+                            return String(value)
+                                .trim() !== '';
+
+                        }
+                    )
+                ) {
+
+                    result.push(row);
+
+                }
+
+
+                row = [];
+
+                continue;
+
+            }
+
+
+            /*
+             * NORMAL CHARACTER
+             */
+
+            field += char;
+
+        }
+
+
+        /*
+         * Last field / row.
+         */
+
+        row.push(field);
+
+
+        if (
+            row.some(
+                function (value) {
+
+                    return String(value)
+                        .trim() !== '';
+
+                }
+            )
+        ) {
+
+            result.push(row);
+
+        }
+
+
+        return result;
+
+    }
+
+
+    /* =========================================================
+       NORMALIZE CSV HEADER
     ========================================================= */
 
-    async function readExcel(event) {
+    function normalizeHeader(value) {
+
+        return String(value || '')
+            .replace(/^\uFEFF/, '')
+            .trim()
+            .toLowerCase()
+            .replace(/[_-]+/g, ' ')
+            .replace(/\s+/g, ' ');
+
+    }
+
+
+    /* =========================================================
+       FIND CSV COLUMN
+    ========================================================= */
+
+    function findColumn(
+        headers,
+        names
+    ) {
+
+        const normalizedHeaders =
+            headers.map(
+                normalizeHeader
+            );
+
+
+        for (
+            const name of names
+        ) {
+
+            const wanted =
+                normalizeHeader(name);
+
+
+            const index =
+                normalizedHeaders.indexOf(
+                    wanted
+                );
+
+
+            if (index !== -1) {
+
+                return index;
+
+            }
+
+        }
+
+
+        return -1;
+
+    }
+
+
+    /* =========================================================
+       READ CSV
+    ========================================================= */
+
+    async function readCSV(event) {
 
         const file =
             event.target.files[0];
 
 
         if (!file) {
+
             return;
+
         }
 
 
         try {
 
             status(
-                'Reading Excel...'
+                'Reading CSV file...'
             );
 
 
-            const buffer =
-                await file.arrayBuffer();
+            /*
+             * Read as text.
+             */
+
+            const text =
+                await file.text();
 
 
-            const workbook =
-                XLSX.read(
-                    buffer,
-                    {
-                        type: 'array'
-                    }
-                );
-
-
-            const sheet =
-                workbook.Sheets[
-                    workbook.SheetNames[0]
-                ];
-
+            /*
+             * Parse CSV.
+             */
 
             const data =
-                XLSX.utils.sheet_to_json(
-                    sheet,
-                    {
-                        defval: '',
-                        raw: false
-                    }
+                parseCSV(text);
+
+
+            if (!data.length) {
+
+                throw new Error(
+                    'CSV file is empty.'
                 );
 
-
-            rows = [];
-
-
-            for (const row of data) {
-
-                const keys =
-                    Object.keys(row);
+            }
 
 
-                function getValue(names) {
+            /*
+             * First row = headers.
+             */
 
-                    const key =
-                        keys.find(k =>
-                            names.includes(
-                                String(k)
-                                    .trim()
-                                    .toLowerCase()
-                            )
-                        );
+            const headers =
+                data[0];
 
 
-                    if (!key) {
-                        return '';
-                    }
+            /*
+             * Find columns.
+             */
 
-
-                    return String(
-                        row[key]
-                    );
-                }
-
-
-                const email =
-                    getValue([
+            const emailColumn =
+                findColumn(
+                    headers,
+                    [
                         'email id',
                         'email',
                         'emailid',
                         'e-mail',
                         'e-mail id'
-                    ]).trim();
+                    ]
+                );
 
 
-                const subject =
-                    getValue([
+            const subjectColumn =
+                findColumn(
+                    headers,
+                    [
                         'subject'
-                    ]);
+                    ]
+                );
 
 
-                const body =
-                    getValue([
+            const bodyColumn =
+                findColumn(
+                    headers,
+                    [
                         'body',
                         'message',
                         'email body'
-                    ]);
+                    ]
+                );
 
 
-                if (email) {
+            if (
+                emailColumn === -1
+            ) {
 
-                    rows.push({
-                        email: email,
-                        subject: subject,
-                        body: body
-                    });
-                }
+                throw new Error(
+                    'Email ID column not found.'
+                );
+
             }
 
+
+            if (
+                subjectColumn === -1
+            ) {
+
+                throw new Error(
+                    'Subject column not found.'
+                );
+
+            }
+
+
+            if (
+                bodyColumn === -1
+            ) {
+
+                throw new Error(
+                    'Body column not found.'
+                );
+
+            }
+
+
+            /*
+             * Build rows.
+             */
+
+            rows = [];
+
+
+            for (
+                let i = 1;
+                i < data.length;
+                i++
+            ) {
+
+                const source =
+                    data[i];
+
+
+                const email =
+                    String(
+                        source[emailColumn] ||
+                        ''
+                    ).trim();
+
+
+                if (!email) {
+
+                    continue;
+
+                }
+
+
+                const subject =
+                    String(
+                        source[subjectColumn] ||
+                        ''
+                    );
+
+
+                const body =
+                    String(
+                        source[bodyColumn] ||
+                        ''
+                    );
+
+
+                rows.push({
+
+                    email: email,
+
+                    subject: subject,
+
+                    body: body
+
+                });
+
+            }
+
+
+            /*
+             * Reset position.
+             */
 
             current = 0;
 
 
+            if (!rows.length) {
+
+                throw new Error(
+                    'No valid email rows found.'
+                );
+
+            }
+
+
             status(
+
                 rows.length +
                 ' emails loaded.\n\n' +
                 'Ready to start.'
+
             );
 
 
             console.log(
-                'COLD OUTREACHER EXCEL:',
+                'COLD OUTREACHER:',
                 rows
             );
 
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                'COLD OUTREACHER:',
+                error
+            );
+
+
+            rows = [];
+
+            current = 0;
 
 
             status(
-                'ERROR READING EXCEL:\n' +
+
+                'ERROR READING FILE:\n' +
                 error.message
+
             );
+
         }
+
     }
 
 
     /* =========================================================
-       FIND COMPOSE WINDOW
+       FIND GMAIL COMPOSE WINDOW
     ========================================================= */
 
     function findComposeWindow() {
@@ -707,7 +1533,9 @@
             );
 
 
-        for (const subject of subjects) {
+        for (
+            const subject of subjects
+        ) {
 
             let parent =
                 subject.parentElement;
@@ -726,47 +1554,61 @@
 
 
                 if (body) {
+
                     return parent;
+
                 }
 
 
                 parent =
                     parent.parentElement;
+
             }
+
         }
 
 
         return null;
+
     }
 
 
     /* =========================================================
-       FIND COMPOSE BUTTON
+       FIND GMAIL COMPOSE BUTTON
     ========================================================= */
 
     function findComposeButton() {
 
-        let button =
+        const direct =
             document.querySelector(
                 'div[gh="cm"]'
             );
 
 
         if (
-            button &&
-            button.offsetParent !== null
+            direct &&
+            direct.offsetParent !== null
         ) {
-            return button;
+
+            return direct;
+
         }
 
 
         const selectors = [
+
             '[aria-label="Compose"]',
+
             '[aria-label*="Compose" i]',
+
             '[data-tooltip="Compose"]',
+
             '[data-tooltip*="Compose" i]',
+
             '[title="Compose"]',
+
             '[title*="Compose" i]'
+
         ];
 
 
@@ -789,8 +1631,11 @@
                 ) {
 
                     return element;
+
                 }
+
             }
+
         }
 
 
@@ -807,11 +1652,14 @@
             if (
                 element.offsetParent === null
             ) {
+
                 continue;
+
             }
 
 
             const values = [
+
                 element.getAttribute(
                     'aria-label'
                 ) || '',
@@ -825,34 +1673,41 @@
                 ) || '',
 
                 element.innerText || ''
+
             ];
 
 
             if (
-                values.some(v =>
-                    /^compose$/i.test(
-                        v.trim()
-                    )
+                values.some(
+                    function (value) {
+
+                        return /^compose$/i.test(
+                            value.trim()
+                        );
+
+                    }
                 )
             ) {
 
-                const parent =
+                return (
                     element.closest(
                         '[role="button"],button,[gh="cm"],[tabindex]'
-                    );
+                    ) ||
+                    element
+                );
 
-
-                return parent || element;
             }
+
         }
 
 
         return null;
+
     }
 
 
     /* =========================================================
-       OPEN COMPOSE
+       OPEN GMAIL COMPOSE
     ========================================================= */
 
     async function openCompose() {
@@ -862,7 +1717,9 @@
 
 
         if (compose) {
+
             return compose;
+
         }
 
 
@@ -873,10 +1730,12 @@
         ) {
 
             status(
+
                 'Opening Gmail Compose...\n\n' +
                 'Attempt ' +
                 attempt +
                 ' / 10'
+
             );
 
 
@@ -900,27 +1759,33 @@
 
 
                     if (compose) {
+
                         return compose;
+
                     }
 
 
                     await sleep(250);
+
                 }
+
             }
 
 
             await sleep(500);
+
         }
 
 
         throw new Error(
             'Gmail Compose button not found.'
         );
+
     }
 
 
     /* =========================================================
-       SET INPUT
+       SET GMAIL INPUT
     ========================================================= */
 
     function setInput(
@@ -962,6 +1827,7 @@
                 }
             )
         );
+
     }
 
 
@@ -974,55 +1840,60 @@
         element.focus();
 
 
-        element.dispatchEvent(
-            new KeyboardEvent(
-                'keydown',
-                {
-                    key: 'Enter',
-                    code: 'Enter',
-                    keyCode: 13,
-                    which: 13,
-                    bubbles: true
-                }
-            )
+        const events = [
+
+            'keydown',
+
+            'keypress',
+
+            'keyup'
+
+        ];
+
+
+        events.forEach(
+            function (type) {
+
+                element.dispatchEvent(
+
+                    new KeyboardEvent(
+                        type,
+                        {
+
+                            key: 'Enter',
+
+                            code: 'Enter',
+
+                            keyCode: 13,
+
+                            which: 13,
+
+                            bubbles: true
+
+                        }
+                    )
+
+                );
+
+            }
         );
 
-
-        element.dispatchEvent(
-            new KeyboardEvent(
-                'keypress',
-                {
-                    key: 'Enter',
-                    code: 'Enter',
-                    keyCode: 13,
-                    which: 13,
-                    bubbles: true
-                }
-            )
-        );
-
-
-        element.dispatchEvent(
-            new KeyboardEvent(
-                'keyup',
-                {
-                    key: 'Enter',
-                    code: 'Enter',
-                    keyCode: 13,
-                    which: 13,
-                    bubbles: true
-                }
-            )
-        );
     }
 
 
     /* =========================================================
-       INSERT MESSAGE
+       INSERT EMAIL BODY
+       
+       Gmail signature is preserved.
 
-       NO innerHTML
-       NO execCommand
-       EXISTING GMAIL SIGNATURE PRESERVED
+       Body:
+       Line 1
+       Line 2
+       Line 3
+
+       [ONE BR]
+
+       Gmail Signature
     ========================================================= */
 
     function insertMessage(
@@ -1038,24 +1909,25 @@
 
         let text =
             String(bodyText)
-                .replace(/\r\n/g, '\n')
-                .replace(/\r/g, '\n');
+
+                .replace(
+                    /\r\n/g,
+                    '\n'
+                )
+
+                .replace(
+                    /\r/g,
+                    '\n'
+                )
+
+                .replace(
+                    /\n+$/,
+                    ''
+                );
 
 
         /*
-         * Remove trailing Excel line breaks.
-         */
-
-        text =
-            text.replace(
-                /\n+$/,
-                ''
-            );
-
-
-        /*
-         * Remove editor contents
-         * WITHOUT using innerHTML.
+         * Clear editor.
          */
 
         while (
@@ -1065,11 +1937,12 @@
             editor.removeChild(
                 editor.firstChild
             );
+
         }
 
 
         /*
-         * Insert body.
+         * Add body line-by-line.
          */
 
         const lines =
@@ -1077,15 +1950,23 @@
 
 
         lines.forEach(
-            function (line, index) {
+            function (
+                line,
+                index
+            ) {
 
-                if (line.length > 0) {
+                if (
+                    line.length > 0
+                ) {
 
                     editor.appendChild(
+
                         document.createTextNode(
                             line
                         )
+
                     );
+
                 }
 
 
@@ -1095,32 +1976,39 @@
                 ) {
 
                     editor.appendChild(
+
                         document.createElement(
                             'br'
                         )
+
                     );
+
                 }
+
             }
         );
 
 
         /*
-         * EXACTLY ONE BR BEFORE
-         * EXISTING GMAIL SIGNATURE.
+         * Add exactly ONE BR
+         * before existing signature.
          */
 
         if (signature) {
 
             editor.appendChild(
+
                 document.createElement(
                     'br'
                 )
+
             );
 
 
             editor.appendChild(
                 signature
             );
+
         }
 
 
@@ -1129,28 +2017,38 @@
          */
 
         editor.dispatchEvent(
+
             new InputEvent(
                 'input',
                 {
+
                     bubbles: true,
-                    inputType: 'insertText',
+
+                    inputType:
+                        'insertText',
+
                     data: text
+
                 }
             )
+
         );
 
 
         editor.dispatchEvent(
+
             new Event(
                 'change',
                 {
                     bubbles: true
                 }
             )
+
         );
 
 
         editor.focus();
+
     }
 
 
@@ -1158,13 +2056,20 @@
        FIND SEND BUTTON
     ========================================================= */
 
-    function findSendButton(compose) {
+    function findSendButton(
+        compose
+    ) {
 
         const selectors = [
+
             '[role="button"][aria-label="Send"]',
+
             '[aria-label="Send"]',
+
             '[data-tooltip="Send"]',
+
             '[aria-label*="Send" i]'
+
         ];
 
 
@@ -1181,23 +2086,28 @@
             if (button) {
 
                 return button;
+
             }
+
         }
 
 
         return null;
+
     }
 
 
     /* =========================================================
-       SEND ONE
+       SEND ONE EMAIL
     ========================================================= */
 
     async function sendOne(row) {
 
         status(
+
             'Opening Compose...\n\n' +
             row.email
+
         );
 
 
@@ -1208,31 +2118,38 @@
         await sleep(500);
 
 
-        /*
-         * RECIPIENT
-         */
+        /* =====================================================
+           RECIPIENT
+        ===================================================== */
 
         const to =
+
             compose.querySelector(
                 'input[aria-label*="Recipients" i]'
-            ) ||
+            )
+
+            ||
 
             compose.querySelector(
                 'input[placeholder*="Recipients" i]'
-            ) ||
+            )
+
+            ||
 
             compose.querySelector(
                 'input[peoplekit-id]'
-            ) ||
+            )
+
+            ||
 
             compose.querySelector(
                 'input[type="text"]'
             );
 
 
-        /*
-         * SUBJECT
-         */
+        /* =====================================================
+           SUBJECT
+        ===================================================== */
 
         const subject =
             compose.querySelector(
@@ -1240,9 +2157,9 @@
             );
 
 
-        /*
-         * BODY
-         */
+        /* =====================================================
+           BODY
+        ===================================================== */
 
         const body =
             compose.querySelector(
@@ -1255,6 +2172,7 @@
             throw new Error(
                 'Recipient field not found.'
             );
+
         }
 
 
@@ -1263,6 +2181,7 @@
             throw new Error(
                 'Subject field not found.'
             );
+
         }
 
 
@@ -1271,16 +2190,19 @@
             throw new Error(
                 'Email body field not found.'
             );
+
         }
 
 
         /* =====================================================
-           RECIPIENT
+           ENTER RECIPIENT
         ===================================================== */
 
         status(
+
             'Entering recipient...\n\n' +
             row.email
+
         );
 
 
@@ -1300,12 +2222,14 @@
 
 
         /* =====================================================
-           SUBJECT
+           ENTER SUBJECT
         ===================================================== */
 
         status(
+
             'Entering subject...\n\n' +
             row.subject
+
         );
 
 
@@ -1319,12 +2243,14 @@
 
 
         /* =====================================================
-           BODY
+           ENTER BODY
         ===================================================== */
 
         status(
+
             'Entering body...\n\n' +
             row.email
+
         );
 
 
@@ -1338,7 +2264,9 @@
 
 
         if (!running) {
+
             return;
+
         }
 
 
@@ -1347,8 +2275,10 @@
         ===================================================== */
 
         status(
+
             'Sending...\n\n' +
             row.email
+
         );
 
 
@@ -1363,6 +2293,7 @@
             throw new Error(
                 'Gmail Send button not found.'
             );
+
         }
 
 
@@ -1370,27 +2301,31 @@
 
 
         await sleep(1800);
+
     }
 
 
     /* =========================================================
-       START
+       START MAILER
     ========================================================= */
 
     async function startMailer() {
 
         if (running) {
+
             return;
+
         }
 
 
         if (!rows.length) {
 
             alert(
-                'Load your Excel file first.'
+                'Load your CSV file first.'
             );
 
             return;
+
         }
 
 
@@ -1399,11 +2334,14 @@
         ) {
 
             alert(
+
                 'All emails are finished.\n\n' +
                 'Click RESET to start again.'
+
             );
 
             return;
+
         }
 
 
@@ -1425,7 +2363,9 @@
 
 
                 if (!running) {
+
                     break;
+
                 }
 
 
@@ -1433,12 +2373,19 @@
 
 
                 status(
+
                     'SENT: ' +
+
                     current +
+
                     ' / ' +
+
                     rows.length +
+
                     '\n\n' +
+
                     row.email
+
                 );
 
 
@@ -1454,60 +2401,90 @@
 
 
                 alert(
+
                     'MAILER STOPPED\n\n' +
 
                     'Row: ' +
+
                     (current + 1) +
 
                     '\nEmail: ' +
+
                     row.email +
 
                     '\n\n' +
 
                     error.message
+
                 );
 
 
                 return;
+
             }
 
 
             if (!running) {
+
                 break;
+
             }
 
 
             if (
                 current >= rows.length
             ) {
+
                 break;
+
             }
+
+
+            /* =================================================
+               DELAY BETWEEN EMAILS
+            ================================================= */
+
+            const delayInput =
+                document.getElementById(
+                    'co-delay'
+                );
 
 
             const delay =
                 Math.max(
+
                     2000,
+
                     Number(
-                        document.getElementById(
-                            'co-delay'
-                        ).value
+                        delayInput.value
                     ) * 1000
+
                 );
 
 
             status(
+
                 'SENT: ' +
+
                 current +
+
                 ' / ' +
+
                 rows.length +
 
                 '\n\nWaiting ' +
+
                 (delay / 1000) +
+
                 ' seconds...'
+
             );
 
 
-            await sleep(delay);
+            await sleep(
+                delay
+            );
+
         }
 
 
@@ -1519,11 +2496,17 @@
         ) {
 
             status(
+
                 'FINISHED\n\n' +
+
                 rows.length +
+
                 ' emails processed.'
+
             );
+
         }
+
     }
 
 
@@ -1537,12 +2520,19 @@
 
 
         status(
+
             'STOPPED\n\n' +
+
             'Progress: ' +
+
             current +
+
             ' / ' +
+
             rows.length
+
         );
+
     }
 
 
@@ -1560,32 +2550,45 @@
         if (rows.length) {
 
             status(
+
                 rows.length +
+
                 ' emails loaded.\n\n' +
+
                 'Ready to start.'
+
             );
 
         } else {
 
             status(
-                'No Excel loaded.'
+                'No CSV loaded.'
             );
+
         }
+
     }
 
 
     /* =========================================================
-       INIT
+       INITIALIZE
     ========================================================= */
 
     function init() {
 
+        removeOldUI();
+
+        addStyles();
+
         createPanel();
+
+        createToggle();
 
 
         console.log(
-            'COLD OUTREACHER v18 LOADED'
+            'COLD OUTREACHER v20.0 LOADED'
         );
+
     }
 
 
@@ -1597,6 +2600,7 @@
     ========================================================= */
 
     setInterval(
+
         function () {
 
             if (
@@ -1606,10 +2610,24 @@
             ) {
 
                 createPanel();
+
+            }
+
+
+            if (
+                !document.getElementById(
+                    'co-toggle'
+                )
+            ) {
+
+                createToggle();
+
             }
 
         },
+
         1000
+
     );
 
 })();
